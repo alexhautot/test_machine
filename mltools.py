@@ -10,6 +10,17 @@ def forward_dense(weights, bias, input):
     A = sigmoid(Z)
     return A
 
+def forward_pass(parameters, X, arc):
+    steps = len(arc)-1
+    a = X
+    cache=[]
+    for i in range(steps):
+        w = parameters["w"+str(i+1)]
+        b = parameters["b"+str(i+1)]
+        a = forward_dense(w,b,a)
+        cache.append(a)
+    return a, cache
+
 def init_weights(w, epsilon):
     #randomly initilises weights of a layer to break symmetry
     dims = w.shape
@@ -23,7 +34,6 @@ def build_weight(arc, epsilon):
     parameters={}
     for i in arc:
         if count == 0:
-            print(i)
             prev_len = i
             count +=1
         else:
@@ -35,10 +45,12 @@ def build_weight(arc, epsilon):
     return parameters
 
 def cost_CE(preds, y):
+    #takes a matrix of predictions and a ground truth matrix, outputs cost_CE
     #not presently working
     #-y*log p + (1 - y)log(1-p
-
-    cost = -y*np.log(preds)#+(1-y)*np.log(1-preds)
+    m = y.shape[0]
+    cost = np.dot(np.log(preds),-y)+np.dot(np.log(1-preds),(y-1))
+    cost = cost/m
     return cost
 
 def to_one_hot(Y,num_char):
