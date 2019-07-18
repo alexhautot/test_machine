@@ -1,29 +1,28 @@
 import numpy as np
 
+import h5py
+
 import mltools
 
+import mldata
+
+X, Y, X_test, Y_test =  mldata.get_training_testing_data('train_catvnoncat.h5', 'test_catvnoncat.h5')
+
+def train_accuracy(parameters, X_test, Y_test, arcitecture):
+    pred, cache = mltools.forward_pass(parameters, X_test, arcitecture)
+    pred = mltools.sigmoid(pred)
+    mltools.accuracy(pred, Y_test)
+
+
+X=X.T
+X_test=X_test.T
 
 
 epsilon = 0.000001
 
-#testing out init_weights then forward_dense
-#n_f = number of features, n_h = number of hidden units
 
-n_f = 12
-n_h = 8
-w=np.ndarray([n_h,n_f])
-
-w = mltools.init_weights(w,epsilon)
-
-#testing build_weight
 np.random.seed(seed=10)
-arcitecture = [16,5,5,1]
-
-m=18
-
-x = np.random.randint(0,high=10,size=(arcitecture[0],m))
-y = np.array([1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0])
-
+arcitecture = [12288,10,10,10,1]
 
 
 #dz, dw, db = mltools.back_prop_final(pred, y, cache[1])
@@ -37,7 +36,9 @@ y = np.array([1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0])
 #working possibly as intended!
 #grads = test_backprop(cache, pred, parameters, arcitecture, x, y)
 
-mltools.nn_model(x,y, arcitecture, 1000, 0.01)
+parameters = mltools.nn_model(X,Y, arcitecture, 15000, 0.01)
+print("test")
+train_accuracy(parameters, X_test, Y_test, arcitecture)
 
 #testing forward_dense, X to be input vector
 #b = np.random.randn(n_h)

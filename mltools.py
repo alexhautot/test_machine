@@ -22,10 +22,22 @@ def forward_pass(parameters, X, arc):
         cache.append(a)
     return a, cache
 
+def forward_pass_test(parameters, X, arc):
+    #takes the paramters and performs one forward pass, returns a, the prediction and a cache of activations
+    steps = len(arc)-1
+    a = X
+    cache=[]
+    for i in range(steps):
+        w = parameters["w"+str(i+1)]
+        b = parameters["b"+str(i+1)]
+        a = forward_dense(w,b,a)
+        cache.append(a)
+    return a, cache
+
 def back_prop_final(A,Y,X):
     #takes the final activation, ground truth and the previous activation, returns the derivatives dw and db
     m=Y.shape[0]
-    dz = A-Y
+    dz = A-Y.T
     dw = (1/m)*np.dot(dz,X.T)
     db = (1/m)*np.sum(dz)
     return dz, dw, db
@@ -42,7 +54,9 @@ def test_backprop(cache, pred, parameters,arcitecture, X,y):
     #written to test a simple arcitecture, intended to extend beyondd that
     steps = len(arcitecture)
     grads={}
-    dz, dw, db = back_prop_final(pred, y, cache[1])
+    dz, dw, db = back_prop_final(pred, y, cache[2])
+    grads.update({"dz4": "dz", "dw4": dw, "db4": db})
+    dz, dw, db = back_prop_tanh(dz, cache[2], parameters["w4"], cache[1])
     grads.update({"dz3": "dz", "dw3": dw, "db3": db})
     dz, dw, db = back_prop_tanh(dz, cache[1], parameters["w3"], cache[0])
     grads.update({"dz2": "dz", "dw2": dw, "db2": db})
@@ -50,7 +64,7 @@ def test_backprop(cache, pred, parameters,arcitecture, X,y):
     grads.update({"dz1": "dz", "dw1": dw, "db1": db})
     return grads
 
-def param_update(parameters, grads, learning_rate,arc):
+def param_update(parameters, grads, learning_rate, arc):
     #updates the parameters and returns them
     steps = len(arc)
     updated_params={}
@@ -64,17 +78,45 @@ def param_update(parameters, grads, learning_rate,arc):
 
 def nn_model(X, y, arcitecture, num_iterations, learning_rate):
     parameters = build_weight(arcitecture, epsilon=0.1)
+    last_cost = 1000000
+    for i in range (num_iterations):
+        pred, cache = forward_pass(parameters, X, arcitecture)
+        pred = sigmoid(pred)
+        cost = cost_squared_loss(pred,y)
+        grads = test_backprop(cache, pred, parameters, arcitecture, X, y)
+        parameters = param_update(parameters, grads, learning_rate, arcitecture)
+        if cost > last_cost:
+            learning_rate=learning_rate / 3
+        last_cost = cost
+        if i% 300 ==0:
+            accuracy(pred, y)
+            print (cost)
+    return parameters
+
+def nn_model_retrain(X, y, arcitecture, num_iterations, learning_rate, parameters):
+    last_cost = 1000000
     for i in range (num_iterations):
         pred, cache = forward_pass(parameters, X, arcitecture)
         pred = sigmoid(pred)
         cost = cost_CE(pred,y)
         grads = test_backprop(cache, pred, parameters, arcitecture, X, y)
         parameters = param_update(parameters, grads, learning_rate, arcitecture)
-        if i%100 ==0:
+        if cost > last_cost:
+            learning_rate=learning_rate / 3
+        last_cost = cost
+        if i%1000 ==0:
+            print("train")
+            accuracy(pred, y)
             print (cost)
     return parameters
 
+def accuracy(pred, y):
 
+    test = pred >0.5
+    test = test * 1
+    correct = test == y.T
+    accuracy = np.sum(correct)/y.shape[0]
+    print("set accuracy ", accuracy)
 
 def init_weights(w, epsilon):
     #randomly initilises weights of a layer to break symmetry
@@ -116,3 +158,8 @@ def to_one_hot(Y,num_char):
         num = Y[0][i]
         new_Y [i][num]=1
     return new_Y
+
+def cost_squared_loss(pred, Y):
+    m = Y.shape[0]
+    cost = np.sum(np.square(pred-Y.T),-1)/m
+    return cost
