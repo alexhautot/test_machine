@@ -34,9 +34,47 @@ def back_prop_tanh(dzh,A,w,Alower):
     #takes the activation,  returns the derivatives dw and db
     m=A.shape[0]
     dz = np.multiply(np.dot(w.T, dzh), 1 - np.power(A, 2))
-    dw = (1 / m) * np.dot(np.transpose(dz), Alower)
+    dw = (1 / m) * np.dot(dz, Alower.T)
     db = (1 / m) * np.sum(dz, axis=1, keepdims=True)
     return dz, dw, db
+
+def test_backprop(cache, pred, parameters,arcitecture, X,y):
+    #written to test a simple arcitecture, intended to extend beyondd that
+    steps = len(arcitecture)
+    grads={}
+    dz, dw, db = back_prop_final(pred, y, cache[1])
+    grads.update({"dz3": "dz", "dw3": dw, "db3": db})
+    dz, dw, db = back_prop_tanh(dz, cache[1], parameters["w3"], cache[0])
+    grads.update({"dz2": "dz", "dw2": dw, "db2": db})
+    dz, dw, db = back_prop_tanh(dz, cache[0], parameters["w2"], X)
+    grads.update({"dz1": "dz", "dw1": dw, "db1": db})
+    return grads
+
+def param_update(parameters, grads, learning_rate,arc):
+    #updates the parameters and returns them
+    steps = len(arc)
+    updated_params={}
+    for i in range(1,steps):
+        w = parameters["w"+str(i)]
+        b = parameters["b"+str(i)]
+        w = w - learning_rate*grads["dw"+str(i)]
+        b = b - learning_rate*grads["db"+str(i)]
+        updated_params.update({"w"+str(i):w, "b"+str(i):b})
+    return updated_params
+
+def nn_model(X, y, arcitecture, num_iterations, learning_rate):
+    parameters = build_weight(arcitecture, epsilon=0.1)
+    for i in range (num_iterations):
+        pred, cache = forward_pass(parameters, X, arcitecture)
+        pred = sigmoid(pred)
+        cost = cost_CE(pred,y)
+        grads = test_backprop(cache, pred, parameters, arcitecture, X, y)
+        parameters = param_update(parameters, grads, learning_rate, arcitecture)
+        if i%100 ==0:
+            print (cost)
+    return parameters
+
+
 
 def init_weights(w, epsilon):
     #randomly initilises weights of a layer to break symmetry

@@ -2,6 +2,8 @@ import numpy as np
 
 import mltools
 
+
+
 epsilon = 0.000001
 
 #testing out init_weights then forward_dense
@@ -14,10 +16,8 @@ w=np.ndarray([n_h,n_f])
 w = mltools.init_weights(w,epsilon)
 
 #testing build_weight
-np.random.seed(seed=0)
+np.random.seed(seed=10)
 arcitecture = [16,5,5,1]
-
-parameters = mltools.build_weight(arcitecture,epsilon)
 
 m=18
 
@@ -26,18 +26,18 @@ y = np.array([1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0])
 
 
 
-pred, cache = mltools.forward_pass(parameters, x, arcitecture)
-#cost = mltools.cost_CE(pred,y)
-
-dz, dw, db = mltools.back_prop_final(pred, y, cache[1])
-print(dz.shape)
-print(dw.shape)
-print(cache[1].shape)
-print(parameters["w3"].shape)
-dz, dw, db = mltools.back_prop_tanh(dz, cache[1],parameters["w3"],cache[0])
+#dz, dw, db = mltools.back_prop_final(pred, y, cache[1])
+#print(dz.shape)
+#print(dw.shape)
+#print(cache[1].shape)
+#print(parameters["w3"].shape)
+#dz, dw, db = mltools.back_prop_tanh(dz, cache[1],parameters["w3"],cache[0])
 #back_prop_tanh and back_prop_final are functioning (not broken yet)
 
 #working possibly as intended!
+#grads = test_backprop(cache, pred, parameters, arcitecture, x, y)
+
+mltools.nn_model(x,y, arcitecture, 1000, 0.01)
 
 #testing forward_dense, X to be input vector
 #b = np.random.randn(n_h)
