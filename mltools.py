@@ -7,10 +7,11 @@ def sigmoid(z):
 def forward_dense(weights, bias, input):
     #forward propergation of a dense layer, currently using sigmoid activation
     Z = np.dot(weights,input)+bias
-    A = sigmoid(Z)
+    A = np.tanh(Z)
     return A
 
 def forward_pass(parameters, X, arc):
+    #takes the paramters and performs one forward pass, returns a, the prediction and a cache of activations
     steps = len(arc)-1
     a = X
     cache=[]
@@ -20,6 +21,22 @@ def forward_pass(parameters, X, arc):
         a = forward_dense(w,b,a)
         cache.append(a)
     return a, cache
+
+def back_prop_final(A,Y,X):
+    #takes the final activation, ground truth and the previous activation, returns the derivatives dw and db
+    m=Y.shape[0]
+    dz = A-Y
+    dw = (1/m)*np.dot(dz,X.T)
+    db = (1/m)*np.sum(dz)
+    return dz, dw, db
+
+def back_prop_tanh(dzh,A,w,Alower):
+    #takes the activation,  returns the derivatives dw and db
+    m=A.shape[0]
+    dz = np.multiply(np.dot(w.T, dzh), 1 - np.power(A, 2))
+    dw = (1 / m) * np.dot(np.transpose(dz), Alower)
+    db = (1 / m) * np.sum(dz, axis=1, keepdims=True)
+    return dz, dw, db
 
 def init_weights(w, epsilon):
     #randomly initilises weights of a layer to break symmetry
@@ -37,7 +54,7 @@ def build_weight(arc, epsilon):
             prev_len = i
             count +=1
         else:
-            parameters["b"+str(count)]=np.zeros([i])
+            parameters["b"+str(count)]=np.zeros([i,1])
             w = np.zeros([i,prev_len])
             parameters["w"+str(count)]=init_weights(w,epsilon)
             prev_len = i

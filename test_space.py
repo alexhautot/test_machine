@@ -19,12 +19,23 @@ arcitecture = [16,5,5,1]
 
 parameters = mltools.build_weight(arcitecture,epsilon)
 
-x = np.random.randint(0,high=10,size=arcitecture[0])
+m=18
+
+x = np.random.randint(0,high=10,size=(arcitecture[0],m))
+y = np.array([1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0])
+
 
 
 pred, cache = mltools.forward_pass(parameters, x, arcitecture)
+#cost = mltools.cost_CE(pred,y)
 
-print(pred)
+dz, dw, db = mltools.back_prop_final(pred, y, cache[1])
+print(dz.shape)
+print(dw.shape)
+print(cache[1].shape)
+print(parameters["w3"].shape)
+dz, dw, db = mltools.back_prop_tanh(dz, cache[1],parameters["w3"],cache[0])
+#back_prop_tanh and back_prop_final are functioning (not broken yet)
 
 #working possibly as intended!
 
