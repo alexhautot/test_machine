@@ -22,7 +22,7 @@ epsilon = 0.000001
 
 
 np.random.seed(seed=10)
-arcitecture = [12288,10,10,10,1]
+arcitecture = [12288,64,32,16,1]
 
 
 #dz, dw, db = mltools.back_prop_final(pred, y, cache[1])
@@ -36,7 +36,7 @@ arcitecture = [12288,10,10,10,1]
 #working possibly as intended!
 #grads = test_backprop(cache, pred, parameters, arcitecture, x, y)
 
-parameters = mltools.nn_model(X,Y, arcitecture, 15000, 0.01)
+parameters = mltools.nn_model(X,Y, arcitecture, 5000, 0.007,X_test, Y_test)
 print("test")
 train_accuracy(parameters, X_test, Y_test, arcitecture)
 

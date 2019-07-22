@@ -51,15 +51,29 @@ def back_prop_tanh(dzh,A,w,Alower):
     return dz, dw, db
 
 def test_backprop(cache, pred, parameters,arcitecture, X,y):
-    #written to test a simple arcitecture, intended to extend beyondd that
+    #written to test a simple arcitecture, intended to extend beyond that
+    #Okay, I've come up with a way to deal with varying the depth:
+    #the first and last layers will be dealt with on their own, the remaining
+    #middle layers can be looped, so long as the activation function is the same
     steps = len(arcitecture)
+    top = steps-1
     grads={}
-    dz, dw, db = back_prop_final(pred, y, cache[2])
-    grads.update({"dz4": "dz", "dw4": dw, "db4": db})
-    dz, dw, db = back_prop_tanh(dz, cache[2], parameters["w4"], cache[1])
-    grads.update({"dz3": "dz", "dw3": dw, "db3": db})
-    dz, dw, db = back_prop_tanh(dz, cache[1], parameters["w3"], cache[0])
-    grads.update({"dz2": "dz", "dw2": dw, "db2": db})
+    #top layer
+    dz, dw, db = back_prop_final(pred, y, cache[top-2])
+    grads.update({"dz"+str(top): "dz", "dw"+str(top): dw, "db"+str(top): db})
+
+    #loop to be written
+    for i in range(top-2):
+        
+        dz, dw, db = back_prop_tanh(dz, cache[top-2-i], parameters["w"+str(top-i)], cache[top-3-i])
+        grads.update({"dz"+str(top-1-i): "dz", "dw"+str(top-1-i): dw, "db"+ str(top-1-i): db})
+
+        #dz, dw, db = back_prop_tanh(dz, cache[2], parameters["w4"], cache[1])
+        #grads.update({"dz3": "dz", "dw3": dw, "db3": db})
+
+        #dz, dw, db = back_prop_tanh(dz, cache[1], parameters["w3"], cache[0])
+        #grads.update({"dz2": "dz", "dw2": dw, "db2": db})
+
     dz, dw, db = back_prop_tanh(dz, cache[0], parameters["w2"], X)
     grads.update({"dz1": "dz", "dw1": dw, "db1": db})
     return grads
@@ -76,8 +90,26 @@ def param_update(parameters, grads, learning_rate, arc):
         updated_params.update({"w"+str(i):w, "b"+str(i):b})
     return updated_params
 
-def nn_model(X, y, arcitecture, num_iterations, learning_rate):
+def nn_model(X, y, arcitecture, num_iterations, learning_rate,X_test,Y_test):
     parameters = build_weight(arcitecture, epsilon=0.1)
+    last_cost = 1000000
+    for i in range (num_iterations):
+        pred, cache = forward_pass(parameters, X, arcitecture)
+        pred = sigmoid(pred)
+        cost = cost_calc(pred, y)
+        grads = test_backprop(cache, pred, parameters, arcitecture, X, y)
+        parameters = param_update(parameters, grads, learning_rate, arcitecture)
+        if cost > last_cost:
+            print("something is wrong yo")
+            learning_rate=learning_rate / 3
+        last_cost = cost
+        if i% 300 ==0:
+            accuracy(pred, y)
+            print (cost)
+            train_accuracy(parameters, X_test, Y_test, arcitecture)
+    return parameters
+
+def nn_model_retrain(X, y, arcitecture, num_iterations, learning_rate, parameters):
     last_cost = 1000000
     for i in range (num_iterations):
         pred, cache = forward_pass(parameters, X, arcitecture)
@@ -86,22 +118,7 @@ def nn_model(X, y, arcitecture, num_iterations, learning_rate):
         grads = test_backprop(cache, pred, parameters, arcitecture, X, y)
         parameters = param_update(parameters, grads, learning_rate, arcitecture)
         if cost > last_cost:
-            learning_rate=learning_rate / 3
-        last_cost = cost
-        if i% 300 ==0:
-            accuracy(pred, y)
-            print (cost)
-    return parameters
-
-def nn_model_retrain(X, y, arcitecture, num_iterations, learning_rate, parameters):
-    last_cost = 1000000
-    for i in range (num_iterations):
-        pred, cache = forward_pass(parameters, X, arcitecture)
-        pred = sigmoid(pred)
-        cost = cost_CE(pred,y)
-        grads = test_backprop(cache, pred, parameters, arcitecture, X, y)
-        parameters = param_update(parameters, grads, learning_rate, arcitecture)
-        if cost > last_cost:
+            print("something is wrong yo")
             learning_rate=learning_rate / 3
         last_cost = cost
         if i%1000 ==0:
@@ -117,6 +134,18 @@ def accuracy(pred, y):
     correct = test == y.T
     accuracy = np.sum(correct)/y.shape[0]
     print("set accuracy ", accuracy)
+
+def train_accuracy(parameters, X_test, Y_test, arcitecture):
+    print("training")
+    pred, cache = forward_pass(parameters, X_test, arcitecture)
+    pred = sigmoid(pred)
+    accuracy(pred, Y_test)
+
+
+def cost_calc(AL, Y):
+    m=Y.shape[0]
+    cost= (1./m) * (-np.dot(np.log(AL),Y) - np.dot( np.log(1-AL), 1-Y))
+    return cost
 
 def init_weights(w, epsilon):
     #randomly initilises weights of a layer to break symmetry
